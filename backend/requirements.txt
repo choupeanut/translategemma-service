@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+transformers
+accelerate
+bitsandbytes
+scipy
+pillow
+python-multipart
+requests
+pytest
+websockets

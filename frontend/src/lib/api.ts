@@ -1,4 +1,16 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+// Dynamic API URL based on current host
+const getApiUrl = () => {
+    // If VITE_API_URL is explicitly set (e.g. production build), use it
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+    
+    // Otherwise, assume backend is on port 8002 of the same host
+    if (typeof window !== 'undefined') {
+        return `http://${window.location.hostname}:8002`;
+    }
+    return 'http://localhost:8002';
+};
+
+const API_URL = getApiUrl();
 
 export type TranslateRequest = {
   type: 'text' | 'image';

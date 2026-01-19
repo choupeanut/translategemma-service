@@ -1,9 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 
-const API_URL = 'http://localhost:8002';
-const WS_URL = 'ws://localhost:8002';
+// Dynamic URL detection
+const getBaseUrl = () => {
+  const hostname = window.location.hostname;
+  return {
+    api: `http://${hostname}:8002`,
+    ws: `ws://${hostname}:8002`
+  };
+};
 
 function App() {
+  const { api: API_URL, ws: WS_URL } = getBaseUrl();
   const [status, setStatus] = useState<any>(null);
   const [inputText, setInputText] = useState('');
   const [translation, setTranslation] = useState('');

@@ -1,25 +1,25 @@
-# Translate Gemma 功能開發規劃 (Docker + Testing Enhanced)
+# Translate Gemma Functional Specifications (Docker + Testing Enhanced)
 
-本文件詳細規劃基於 Google Translate Gemma 模型的本地翻譯服務與前端應用程式，所有服務均容器化並包含完整測試流程。
+This document details the planning for the local translation service based on Google Translate Gemma, fully containerized with testing workflows.
 
-## 1. 硬體環境評估與模型策略
+## 1. Hardware Assessment & Strategy
 
-### 硬體狀態
+### Hardware Status
 *   **GPU:** NVIDIA GeForce RTX 3060 (Laptop)
 *   **VRAM:** 6GB
 *   **CUDA:** 13.0
-*   **Host OS:** Linux (支援 Docker + NVIDIA Container Toolkit)
+*   **Host OS:** Linux (Docker + NVIDIA Container Toolkit supported)
 
-### 模型運行策略 (Finalized)
+### Model Strategy (Finalized)
 *   **Model:** `google/translategemma-4b-it`
 *   **Quantization:** BitsAndBytes 4-bit (NF4)
 *   **Dtype:** `torch.bfloat16` (Critical for stability)
 
 ---
 
-## 2. 系統架構 (Dockerized & Streaming)
+## 2. System Architecture (Dockerized & Streaming)
 
-系統採微服務架構，透過 Docker Compose 編排：
+Microservices architecture orchestrated via Docker Compose:
 
 1.  **Backend Service (Container):**
     *   **Protocol:** WebSocket (`/ws/translate`) for real-time streaming.
@@ -32,55 +32,55 @@
 
 ---
 
-## 3. Backend 開發重點
+## 3. Backend Development Key Points
 
-### 關鍵技術決策
-*   **WebSocket vs SSE:** 最終選擇 WebSocket，因其全雙工特性且不受部分 HTTP 中間層 (Proxy/Buffering) 的影響，能確保最穩定的即時性。
-*   **Threaded Generation:** 為避免 Python GIL 與 FastAPI Event Loop 阻塞，模型推論 (`model.generate`) 必須在獨立 Thread 中執行，並透過 `Streamer` 將 Token 傳回主執行緒。
-*   **Force GPU:** 強制指定 `device_map="cuda:0"`，禁止 `auto` 模式下的 CPU Offloading，確保速度。
+### Key Technical Decisions
+*   **WebSocket vs SSE:** WebSocket was chosen for its full-duplex nature and resilience against HTTP intermediate buffering (Proxy/Nginx), ensuring stable low-latency streaming.
+*   **Threaded Generation:** To avoid blocking Python GIL and FastAPI Event Loop, model inference (`model.generate`) runs in a separate thread, piping tokens back to the main thread via `Streamer`.
+*   **Force GPU:** Forced `device_map="cuda:0"` to strictly ban CPU Offloading, preserving performance.
 
-### API 設計
+### API Design
 *   `WEBSOCKET /ws/translate`: 
     *   Input: JSON `{ "text": "...", "source_lang": "en", ... }`
     *   Output: JSON Stream `{ "chunk": "..." }` -> `{ "done": true }`
-*   `GET /api/status`: GPU 狀態與當前模型。
+*   `GET /api/status`: GPU status and current model info.
 
 ---
 
-## 4. Frontend 開發重點
+## 4. Frontend Development Key Points
 
-### UI 設計 (v2.2)
-*   **Responsive Layout:** 使用 `flex-col` 與 `flex-grow` 實現滿版高度，適應各種螢幕尺寸。
-*   **Language Selection:** 實作完整的語言下拉選單，支援 Source/Target 語言切換。
-*   **即時回饋:** 翻譯區域採用 Append 模式更新文字，並提供 Copy 功能。
-*   **狀態監控:** 頂部顯示 GPU 型號與即時 VRAM 使用量。
+### UI Design (v2.2)
+*   **Responsive Layout:** Uses `flex-col` and `flex-grow` for full-height adaptation.
+*   **Language Selection:** Dropdowns for Source/Target language selection.
+*   **Real-time Feedback:** Append-mode text updates with Copy support.
+*   **Monitoring:** Header displays GPU model and VRAM usage.
 
-### 網路層
-*   **Smart Detection:** 自動偵測 `http/https` 協定與埠號。若處於標準埠 (80/443)，自動切換為同源代理模式 (適合 Nginx Reverse Proxy)。
-
----
-
-## 5. Docker Compose 整合
-
-`docker-compose.yml` 結構保持不變，但 Backend `Dockerfile` 需確保安裝 `uvicorn[standard]` 與 `websockets`。
+### Networking
+*   **Smart Detection:** Detects `http/https` protocol and ports. If on standard ports (80/443), switches to same-origin proxy mode (ideal for Nginx Reverse Proxy).
 
 ---
 
-## 6. 效能優化紀錄
+## 5. Docker Compose Integration
 
-### 歷程
-1.  **初始版:** HTTP POST，等待 60s+ 才一次回傳 -> 體驗極差。
-2.  **優化版 (Attempt 1):** HTTP SSE，但因 Buffer 問題導致卡頓。
-3.  **最終版 (Attempt 2):** WebSocket，成功實現 <1s 首字延遲。
+`docker-compose.yml` structure remains standard, ensuring `uvicorn[standard]` and `websockets` are installed in the backend.
 
-### 參數設定
-*   `max_new_tokens`: 2048 (支援長文)
+---
+
+## 6. Performance Optimization Log
+
+### History
+1.  **Initial:** HTTP POST, 60s+ wait time -> Poor UX.
+2.  **Optimization (Attempt 1):** HTTP SSE, failed due to buffering issues.
+3.  **Final (Attempt 2):** WebSocket, achieved <1s start latency.
+
+### Parameter Tuning
+*   `max_new_tokens`: 2048 (Long text support)
 *   `repetition_penalty`: 1.1
 *   `do_sample`: False (Greedy Search)
 
 ---
 
-## 7. 檔案結構預覽
+## 7. File Structure
 
 ```
 project_root/

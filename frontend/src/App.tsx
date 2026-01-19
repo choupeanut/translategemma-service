@@ -237,11 +237,16 @@ function App() {
       </main>
 
       {/* Footer Status */}
-      <footer className="flex-none py-2 px-6 text-[10px] text-slate-400 flex justify-between bg-white border-t border-slate-100">
-         <div>API: {API_URL}</div>
-         <div className="flex gap-4">
+      <footer className="flex-none py-2 px-6 text-[10px] text-slate-400 flex flex-col md:flex-row justify-between items-center bg-white border-t border-slate-100 gap-2">
+         <div className="flex flex-col md:flex-row gap-2 md:gap-4 text-center md:text-left">
             <span>Model: Gemma 4B-IT</span>
+            <span className="hidden md:inline">|</span>
             <span>Engine: PyTorch SDPA + BFloat16</span>
+            <span className="hidden md:inline">|</span>
+            <span>API: {API_URL}</span>
+         </div>
+         <div className="text-center md:text-right font-medium">
+            Credit: <a href="https://github.com/choupeanut/translategemma-service" target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700 hover:underline transition-colors">Peanut Chou</a>
          </div>
       </footer>
     </div>

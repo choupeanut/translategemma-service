@@ -90,12 +90,27 @@ class ModelManager:
         if not self.model:
             self.load_model()
             
+        # Prompt Engineering for specific languages
+        # Gemma models sometimes default to Simplified Chinese for "zh" or "zh-TW"
+        # We explicitly instruct it in the content if needed.
+        final_content = content
+        final_target_lang = target_lang
+
+        if target_lang == "zh-TW":
+            # Append explicit instruction. 
+            # Note: Changing target_lang_code to "zh" might be safer if "zh-TW" is not strictly supported by the tokenizer's special tokens,
+            # but usually the model handles the text instruction better.
+            # Strategy: Keep code as zh-TW (or zh) but add prompt nuance.
+            # Experiment shows explicit text instruction works best.
+            final_content = f"Translate the following text into Traditional Chinese (繁體中文):\n{content}"
+            # Some models prefer standard codes. Let's keep passing zh-TW but rely on the prompt.
+        
         if type == "text":
             input_content = [{
                 "type": "text",
                 "source_lang_code": source_lang,
                 "target_lang_code": target_lang,
-                "text": content
+                "text": final_content
             }]
         else:
             raise NotImplementedError("Image not supported in stream mode yet")

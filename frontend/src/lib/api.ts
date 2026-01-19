@@ -1,12 +1,19 @@
 // Dynamic API URL based on current host
 const getApiUrl = () => {
-    // If VITE_API_URL is explicitly set (e.g. production build), use it
+    // 1. If VITE_API_URL is explicitly set (e.g. production build), use it
     if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
     
-    // Otherwise, assume backend is on port 8002 of the same host
+    // 2. Otherwise, detect based on window location
     if (typeof window !== 'undefined') {
-        const protocol = window.location.protocol;
-        return `${protocol}//${window.location.hostname}:8002`;
+        const { hostname, protocol, port } = window.location;
+        
+        // If on standard ports, assume proxy routing without port 8002
+        if (port === "" || port === "80" || port === "443") {
+            return `${protocol}//${hostname}`;
+        }
+        
+        // Local/LAN fallback
+        return `${protocol}//${hostname}:8002`;
     }
     return 'http://localhost:8002';
 };

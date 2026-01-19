@@ -2,11 +2,27 @@ import { useState, useEffect, useRef } from 'react';
 
 // Dynamic URL detection
 const getBaseUrl = () => {
-  const hostname = window.location.hostname;
-  const protocol = window.location.protocol; // 'http:' or 'https:'
+  // 1. Respect Build-time override if provided
+  if (import.meta.env.VITE_API_URL) {
+    const api = import.meta.env.VITE_API_URL;
+    const ws = api.replace(/^http/, 'ws');
+    return { api, ws };
+  }
+
+  const { hostname, protocol, port } = window.location;
   const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
   
-  // Default to port 8002 for backend, but keep protocol in sync with frontend
+  // 2. Smart Detection for Reverse Proxy (Option B)
+  // If we are on a standard port (80/443, port is empty string), 
+  // assume the proxy handles /api and /ws on the same domain.
+  if (port === "" || port === "80" || port === "443") {
+    return {
+      api: `${protocol}//${hostname}`, 
+      ws: `${wsProtocol}//${hostname}`
+    };
+  }
+
+  // 3. Fallback for Local LAN / Dev (e.g. 192.168.0.247:5173)
   return {
     api: `${protocol}//${hostname}:8002`,
     ws: `${wsProtocol}//${hostname}:8002`

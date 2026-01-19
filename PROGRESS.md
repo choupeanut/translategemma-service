@@ -33,8 +33,13 @@
 
 ## 🚀 未來維護指引 (Maintenance Guide)
 
-### 1. 模型升級
-若未來硬體升級 (如 VRAM > 12GB)，可嘗試切換至 `google/translategemma-12b-it`。需修改 `model_manager.py` 中的預設模型名稱。
+### 1. 反向代理與外部存取 (Reverse Proxy / Domain)
+本系統已支援「智慧自動偵測」，若要透過 `https://domain.com` 部署（方案 B）：
+*   **Nginx 設定**: 
+    *   將 `/` 代理至前端 (5173)。
+    *   將 `/api/` 代理至後端 (8002)。
+    *   將 `/ws/` 代理至後端 (8002)，並開啟 WebSocket 支援 (Upgrade header)。
+*   **自動偵測**: 當網址不帶埠號時，前端會自動切換為「同源模式」，不再請求 `:8002`，實現完美的單一入口存取。
 
 ### 2. 圖片翻譯擴充
 目前架構已預留 Image Input 介面。若要實作，需在 `model_manager.py` 中引入 `PaliGemmaProcessor` 或對應的多模態處理器，並將圖片編碼後傳入模型。

@@ -178,6 +178,10 @@ function App() {
              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
              Engine: PyTorch SDPA + BFloat16
            </div>
+           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+             API: {API_URL}
+           </div>
         </div>
       </div>
     </div>

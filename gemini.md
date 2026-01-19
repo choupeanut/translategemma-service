@@ -27,8 +27,8 @@
     *   **Concurrency:** Thread-based generation using `TextIteratorStreamer`.
 2.  **Frontend Service (Container):**
     *   **Framework:** React 18 + Vite.
-    *   **Style:** Tailwind CSS.
-    *   **Connection:** Native `WebSocket` API.
+    *   **Style:** Tailwind CSS (Responsive Full-height Layout).
+    *   **Connection:** Native `WebSocket` API with Smart Proxy Detection.
 
 ---
 
@@ -49,10 +49,14 @@
 
 ## 4. Frontend 開發重點
 
-### UI 設計
-*   **即時回饋:** 翻譯區域採用 Append 模式更新文字。
+### UI 設計 (v2.2)
+*   **Responsive Layout:** 使用 `flex-col` 與 `flex-grow` 實現滿版高度，適應各種螢幕尺寸。
+*   **Language Selection:** 實作完整的語言下拉選單，支援 Source/Target 語言切換。
+*   **即時回饋:** 翻譯區域採用 Append 模式更新文字，並提供 Copy 功能。
 *   **狀態監控:** 頂部顯示 GPU 型號與即時 VRAM 使用量。
-*   **版本標記:** 標示 `(v2.1 WS Only)` 以區分舊版。
+
+### 網路層
+*   **Smart Detection:** 自動偵測 `http/https` 協定與埠號。若處於標準埠 (80/443)，自動切換為同源代理模式 (適合 Nginx Reverse Proxy)。
 
 ---
 
@@ -94,5 +98,8 @@ project_root/
     ├── vite.config.ts
     └── src/
         ├── App.tsx
+        ├── lib/
+        │   ├── api.ts
+        │   └── languages.ts
         └── main.tsx
 ```

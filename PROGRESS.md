@@ -24,12 +24,12 @@
     *   Generation: Greedy Search, Max Tokens 2048。
 
 ### Frontend (React + Tailwind)
-*   **Protocol:** 透過原生 `WebSocket` API 與後端建立長連接。
-*   **UI/UX:**
-    *   即時串流顯示 (Typewriter effect)。
-    *   版本標記 `(v2.1 WS Only)`。
-    *   即時 GPU VRAM 監控。
-    *   自適應錯誤處理 (Connection Error / Parsing Error)。
+*   **Protocol:** 透過原生 `WebSocket` API 與後端建立長連接，支援**智慧自動偵測**反向代理 (Reverse Proxy) 環境。
+*   **UI/UX (v2.2):**
+    *   **Responsive Layout:** 採用 `h-screen` 滿版設計，輸入/輸出框自動填滿剩餘空間。
+    *   **Language Selector:** 支援雙向語言選擇，顯示格式為 `Native Name (Code)`。
+    *   **Controls:** 中央懸浮翻譯按鈕，輸出框支援一鍵複製。
+    *   **Monitoring:** 頂部 Header 即時顯示 GPU VRAM 使用量。
 
 ## 🚀 未來維護指引 (Maintenance Guide)
 
@@ -41,8 +41,8 @@
     *   將 `/ws/` 代理至後端 (8002)，並開啟 WebSocket 支援 (Upgrade header)。
 *   **自動偵測**: 當網址不帶埠號時，前端會自動切換為「同源模式」，不再請求 `:8002`，實現完美的單一入口存取。
 
-### 2. 圖片翻譯擴充
-目前架構已預留 Image Input 介面。若要實作，需在 `model_manager.py` 中引入 `PaliGemmaProcessor` 或對應的多模態處理器，並將圖片編碼後傳入模型。
+### 2. 模型升級
+若未來硬體升級 (如 VRAM > 12GB)，可嘗試切換至 `google/translategemma-12b-it`。需修改 `model_manager.py` 中的預設模型名稱。
 
 ### 3. vLLM 加速
 目前的 PyTorch SDPA 已經很快，但若需要極致併發性能 (Concurrent Requests)，建議將後端推論引擎替換為 **vLLM**。

@@ -45,8 +45,8 @@ It features **Docker containerization**, **WebSocket real-time streaming**, and 
 
 ```mermaid
 graph LR
-    User[Browser Frontend] -- WebSocket --> API[FastAPI Backend]
-    API -- Threading --> Model[Translate Gemma 4B (GPU)]
+    User["Browser Frontend"] -- WebSocket --> API["FastAPI Backend"]
+    API -- Threading --> Model["Translate Gemma 4B (GPU)"]
     Model -- Token Stream --> API
     API -- JSON Chunk --> User
 ```

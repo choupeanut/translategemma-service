@@ -3,34 +3,28 @@ import { LANGUAGES } from './lib/languages';
 
 // Dynamic URL detection
 const getBaseUrl = () => {
-  const { hostname, protocol, port } = window.location;
-
   // 1. Respect Build-time override ONLY if it's not a generic localhost default
   if (import.meta.env.VITE_API_URL) {
     const envApi = import.meta.env.VITE_API_URL;
+    const { hostname } = window.location;
     const isEnvLocal = envApi.includes('localhost') || envApi.includes('127.0.0.1');
     const isActualLocal = hostname === 'localhost' || hostname === '127.0.0.1';
     
-    // If env says localhost but we are on an IP, ignore the env.
+    // If env says localhost but we are on an IP/Public domain, ignore the env.
     if (!(isEnvLocal && !isActualLocal)) {
-      const api = envApi;
+      const api = envApi.endsWith('/') ? envApi.slice(0, -1) : envApi;
       const ws = api.replace(/^http/, 'ws');
       return { api, ws };
     }
   }
 
+  // 2. Default: Use current origin (works with Proxy)
+  const { protocol, host } = window.location;
   const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
   
-  if (port === "" || port === "80" || port === "443") {
-    return {
-      api: `${protocol}//${hostname}`,
-      ws: `${wsProtocol}//${hostname}`
-    };
-  }
-
   return {
-    api: `${protocol}//${hostname}:8002`,
-    ws: `${wsProtocol}//${hostname}:8002`
+    api: '', // Relative path, browser handles protocol/host
+    ws: `${wsProtocol}//${host}` // WebSocket needs absolute URL
   };
 };
 
@@ -243,7 +237,7 @@ function App() {
             <span className="hidden md:inline">|</span>
             <span>Engine: PyTorch SDPA + BFloat16</span>
             <span className="hidden md:inline">|</span>
-            <span>API: {API_URL}</span>
+            <span>API: {API_URL || window.location.origin}</span>
          </div>
          <div className="text-center md:text-right font-medium">
             Credit: <a href="https://github.com/choupeanut/translategemma-service" target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700 hover:underline transition-colors">Peanut Chou</a>

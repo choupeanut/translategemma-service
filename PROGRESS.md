@@ -33,13 +33,12 @@
 
 ## 🚀 Future Maintenance Guide
 
-### 1. Reverse Proxy & External Access
-The system supports "Smart Auto-Detection". To deploy via `https://domain.com` (Option B):
-*   **Nginx Config:** 
-    *   Proxy `/` to frontend (5173).
-    *   Proxy `/api/` to backend (8002).
-    *   Proxy `/ws/` to backend (8002) with Upgrade headers.
-*   **Auto-Detection:** Frontend automatically switches to same-origin mode when accessed via standard ports (80/443), eliminating the need for `:8002`.
+### 1. Reverse Proxy & External Access (Updated v2.3)
+The system now uses a **Vite Proxy** architecture for robust connectivity:
+*   **Unified Origin:** Frontend requests `/api` and `/ws` relative to its own origin.
+*   **Internal Proxy:** Vite dev server proxies these requests to `http://backend:8000`.
+*   **Allowed Hosts:** Configured `server.allowedHosts: true` to support any domain/IP (Synology, Localhost, etc.).
+*   **Benefit:** Eliminates CORS issues, mixed content errors (wss/ws), and complex Nginx configuration. Works out-of-the-box for both local IP (192.168.x.x) and public HTTPS domains.
 
 ### 2. Model Upgrades
 If hardware is upgraded (VRAM > 12GB), consider switching to `google/translategemma-12b-it`. Update the default model name in `model_manager.py`.

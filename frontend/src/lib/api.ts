@@ -5,7 +5,8 @@ const getApiUrl = () => {
     
     // Otherwise, assume backend is on port 8002 of the same host
     if (typeof window !== 'undefined') {
-        return `http://${window.location.hostname}:8002`;
+        const protocol = window.location.protocol;
+        return `${protocol}//${window.location.hostname}:8002`;
     }
     return 'http://localhost:8002';
 };

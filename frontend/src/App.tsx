@@ -3,9 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 // Dynamic URL detection
 const getBaseUrl = () => {
   const hostname = window.location.hostname;
+  const protocol = window.location.protocol; // 'http:' or 'https:'
+  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+  
+  // Default to port 8002 for backend, but keep protocol in sync with frontend
   return {
-    api: `http://${hostname}:8002`,
-    ws: `ws://${hostname}:8002`
+    api: `${protocol}//${hostname}:8002`,
+    ws: `${wsProtocol}//${hostname}:8002`
   };
 };
 

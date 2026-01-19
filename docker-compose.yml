@@ -24,8 +24,8 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    environment:
-      - VITE_API_URL=http://localhost:8002
+    # environment:
+    #   - VITE_API_URL=http://localhost:8002
     depends_on:
       - backend
     command: npm run dev -- --host

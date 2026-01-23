@@ -12,7 +12,11 @@ It features **Docker containerization**, **WebSocket real-time streaming**, and 
 *   **Hardware Optimization:** 
     *   Uses `bitsandbytes` 4-bit quantization, requiring only ~3GB VRAM.
     *   Enabled `bfloat16` and `SDPA` (Scaled Dot Product Attention) for Ampere architecture acceleration.
-*   **Modern Interface:** Clean UI built with React 18 and Tailwind CSS, featuring real-time GPU monitoring.
+*   **Modern Interface (v2.3):** 
+    *   Responsive layout built with React 18 and Tailwind CSS.
+    *   Real-time GPU VRAM monitoring.
+    *   Optimized input/output panels for long-form translation.
+    *   Standardized Source/Target language selection with ISO codes.
 *   **Fully Local:** All inference runs on your local GPU. No internet required (after model download), ensuring data privacy.
 
 ## 🛠️ Installation & Setup
@@ -73,3 +77,4 @@ Model weights follow the Google Gemma Terms of Use.
 
 ## 👨‍💻 Credits
 Developed by [Peanut Chou](https://github.com/choupeanut/translategemma-service)
+Forked from google-deepmind/gemma

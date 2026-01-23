@@ -22,18 +22,22 @@
     *   Compute Dtype: `torch.bfloat16`
     *   Attention: `sdpa` (Scaled Dot Product Attention) acceleration.
     *   Generation: Greedy Search, Max Tokens 2048.
+*   **Refactoring (v2.3):**
+    *   Adopted `fastapi-templates` structure.
+    *   Separated concerns: `schemas.py`, `dependencies.py`, `model_manager.py`.
+    *   Enhanced logging and Pydantic validation.
 
 ### Frontend (React + Tailwind)
 *   **Protocol:** Uses native `WebSocket` API with **Smart Detection** for Reverse Proxy environments.
-*   **UI/UX (v2.2):**
-    *   **Responsive Layout:** Full-height `h-screen` design adapting to all screen sizes.
-    *   **Language Selector:** Full support for source/target language selection via dropdowns.
-    *   **Controls:** Floating center translate button, copy-to-clipboard functionality.
-    *   **Monitoring:** Real-time GPU VRAM usage display in header.
+*   **UI/UX (v2.3):**
+    *   **Layout:** Full-width `max-w-[1800px]` responsive layout without scrollbars (single page app feel).
+    *   **Components:** Modularized UI (`components/ui`), custom hooks (`useTranslation`).
+    *   **Languages:** Enhanced language selector with localized names and ISO codes (e.g., `繁體中文 (zh-TW)`).
+    *   **Monitoring:** Real-time GPU VRAM usage display.
 
 ## 🚀 Future Maintenance Guide
 
-### 1. Reverse Proxy & External Access (Updated v2.3)
+### 1. Reverse Proxy & External Access
 The system now uses a **Vite Proxy** architecture for robust connectivity:
 *   **Unified Origin:** Frontend requests `/api` and `/ws` relative to its own origin.
 *   **Internal Proxy:** Vite dev server proxies these requests to `http://backend:8000`.

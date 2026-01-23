@@ -1,25 +1,52 @@
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from model_manager import model_manager
-import torch
 import json
 import asyncio
+import logging
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
 
-# Pre-load model on startup
-@app.on_event("startup")
-async def startup_event():
-    print("System Startup: Pre-loading default model (google/translategemma-4b-it)...")
+from schemas import TranslationRequest, SystemStatus
+from dependencies import get_model_manager
+from model_manager import ModelManager
+
+# Configure Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+# Lifespan Context Manager
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("System Startup: Pre-loading default model (google/translategemma-4b-it)...")
+    manager = get_model_manager()
     try:
-        model_manager.load_model("google/translategemma-4b-it")
-        print("System Startup: Model pre-loading complete.")
+        # We assume the manager handles its own threading/loading safety
+        manager.load_model("google/translategemma-4b-it")
+        logger.info("System Startup: Model pre-loading complete.")
     except Exception as e:
-        print(f"System Startup Error: Failed to load model: {e}")
+        logger.error(f"System Startup Error: Failed to load model: {e}")
+    
+    yield
+    
+    logger.info("System Shutdown: Cleaning up resources...")
+    # Add any cleanup logic here (e.g., closing DB connections, unloading models)
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
-# Allow CORS for frontend
+import torch # Imported here for the shutdown logic reference above
+
+app = FastAPI(
+    title="TranslateGemma Service",
+    version="2.3.0",
+    description="High-performance AI Translation API backed by Gemma-4b-it",
+    lifespan=lifespan
+)
+
+# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,95 +55,77 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class TranslationRequest(BaseModel):
-    type: str 
-    source_lang: str
-    target_lang: str
-    content: str = None
-    image_data: str = None
-    model: str = "4b"
-
 @app.websocket("/ws/translate")
-async def websocket_translate(websocket: WebSocket):
+async def websocket_translate(
+    websocket: WebSocket,
+    manager: ModelManager = Depends(get_model_manager)
+):
     await websocket.accept()
+    logger.info("WebSocket connection established.")
+    
     try:
-        data = await websocket.receive_text()
-        request_data = json.loads(data)
-        
-        # Extract params
-        source_lang = request_data.get("source_lang", "en")
-        target_lang = request_data.get("target_lang", "zh-TW")
-        content = request_data.get("content", "")
-        type_ = request_data.get("type", "text")
-        
-        print(f"DEBUG: WebSocket request received. Content length: {len(content)}")
+        while True:
+            data = await websocket.receive_text()
+            
+            try:
+                # Parse and Validate Request
+                request_dict = json.loads(data)
+                # Validation using Pydantic
+                request_data = TranslationRequest(**request_dict)
+            except ValidationError as e:
+                await websocket.send_text(json.dumps({"error": "Validation Error", "details": e.errors()}))
+                continue
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"error": "Invalid JSON"}))
+                continue
 
-        if type_ != "text":
-             await websocket.send_text(json.dumps({"error": "Only text supported"}))
-             await websocket.close()
-             return
+            if request_data.type != "text":
+                await websocket.send_text(json.dumps({"error": "Only text supported in this version"}))
+                # We don't close the connection, just report error for this request
+                continue
 
-        # Use the synchronous generator in a thread is handled by TextIteratorStreamer
-        # We just iterate the streamer
-        stream = model_manager.stream_translate(
-            type=type_,
-            source_lang=source_lang,
-            target_lang=target_lang,
-            content=content
-        )
-        
-        for chunk in stream:
-            # Send raw chunk directly
-            await websocket.send_text(json.dumps({"chunk": chunk}))
-            await asyncio.sleep(0) # Yield
+            logger.info(f"Processing translation request: {len(request_data.content)} chars -> {request_data.target_lang}")
 
-        await websocket.send_text(json.dumps({"done": True}))
-        await websocket.close()
+            try:
+                # Streaming Response
+                stream = manager.stream_translate(
+                    type=request_data.type,
+                    source_lang=request_data.source_lang,
+                    target_lang=request_data.target_lang,
+                    content=request_data.content
+                )
+
+                for chunk in stream:
+                    await websocket.send_text(json.dumps({"chunk": chunk}))
+                    await asyncio.sleep(0) # Yield control
+
+                await websocket.send_text(json.dumps({"done": True}))
+            
+            except Exception as e:
+                logger.error(f"Translation Error: {e}", exc_info=True)
+                await websocket.send_text(json.dumps({"error": str(e)}))
 
     except WebSocketDisconnect:
-        print("WebSocket disconnected")
+        logger.info("WebSocket disconnected.")
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.error(f"WebSocket Unexpected Error: {e}", exc_info=True)
         try:
-            await websocket.send_text(json.dumps({"error": str(e)}))
-            await websocket.close()
+            await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
         except:
             pass
 
-# DELETED: Keep REST endpoints for compatibility
-# @app.post("/api/translate")
-# async def translate(request: TranslationRequest):
-#     try:
-#         import time
-#         start_time = time.time()
-#         result = model_manager.translate(
-#             type=request.type,
-#             source_lang=request.source_lang,
-#             target_lang=request.target_lang,
-#             content=request.content,
-#             image_data=request.image_data
-#         )
-#         end_time = time.time()
-#         return {
-#             "translation": result,
-#             "model_used": model_manager.current_model_name,
-#             "time_taken": end_time - start_time
-#         }
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/status")
-async def get_status():
+@app.get("/api/status", response_model=SystemStatus)
+async def get_status(manager: ModelManager = Depends(get_model_manager)):
+    """Get the current status of the GPU and loaded Model."""
     gpu_status = {
         "available": torch.cuda.is_available(),
         "device_count": torch.cuda.device_count(),
         "current_device": torch.cuda.current_device() if torch.cuda.is_available() else None,
         "device_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
     }
-    model_status = model_manager.get_status()
+    model_status = manager.get_status()
     return {"gpu": gpu_status, "model": model_status}
 
 @app.get("/")
 async def root():
-    return {"message": "Translate Gemma API is running"}
+    return {"message": "Translate Gemma API is running. Connect to /ws/translate for streaming translations."}

@@ -25,6 +25,7 @@ Microservices architecture orchestrated via Docker Compose:
     *   **Protocol:** WebSocket (`/ws/translate`) for real-time streaming.
     *   **Libraries:** `fastapi`, `uvicorn[standard]`, `websockets`, `transformers`, `accelerate`, `bitsandbytes`.
     *   **Concurrency:** Thread-based generation using `TextIteratorStreamer`.
+    *   **Structure:** Follows `fastapi-templates` (dependencies, schemas, lifespan management).
 2.  **Frontend Service (Container):**
     *   **Framework:** React 18 + Vite.
     *   **Style:** Tailwind CSS (Responsive Full-height Layout).
@@ -49,9 +50,9 @@ Microservices architecture orchestrated via Docker Compose:
 
 ## 4. Frontend Development Key Points
 
-### UI Design (v2.2)
-*   **Responsive Layout:** Uses `flex-col` and `flex-grow` for full-height adaptation.
-*   **Language Selection:** Dropdowns for Source/Target language selection.
+### UI Design (v2.3)
+*   **Responsive Layout:** Uses `flex-col`, `flex-grow`, and `overflow-hidden` to ensure a single-page application feel without body scrollbars.
+*   **Language Selection:** Enhanced dropdowns with localized names and ISO codes.
 *   **Real-time Feedback:** Append-mode text updates with Copy support.
 *   **Monitoring:** Header displays GPU model and VRAM usage.
 
@@ -91,6 +92,8 @@ project_root/
 │   ├── Dockerfile
 │   ├── main.py
 │   ├── model_manager.py
+│   ├── schemas.py
+│   ├── dependencies.py
 │   ├── requirements.txt
 └── frontend/
     ├── Dockerfile
@@ -98,8 +101,11 @@ project_root/
     ├── vite.config.ts
     └── src/
         ├── App.tsx
+        ├── components/
+        │   └── ui/
+        ├── hooks/
+        │   └── useTranslation.ts
         ├── lib/
-        │   ├── api.ts
         │   └── languages.ts
         └── main.tsx
 ```
